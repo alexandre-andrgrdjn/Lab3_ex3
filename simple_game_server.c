@@ -23,7 +23,7 @@ int main() {
     // Création du socket serveur
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
         perror("Échec de la création du socket");
-        exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE); 
     }
 
     // Options pour réutiliser le port immédiatement après fermeture
@@ -44,7 +44,7 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    // Mise en écoute du serveur
+    // Mise en écoute du serveur uniquement 2 personnes max
     if (listen(server_fd, 2) < 0) {
         perror("Échec du listen");
         close(server_fd);
