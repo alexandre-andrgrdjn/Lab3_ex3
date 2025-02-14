@@ -12,6 +12,16 @@
 #define BUFFER_SIZE 1024
 #define LOG_FILE "simple_game_log.txt"
 
+// Structure pour stocker un client
+typedef struct {
+    int socket_fd;
+    struct sockaddr_in address;
+} Client;
+
+Client clients[100];  // On suppose qu'il y a au maximum 100 clients
+int client_count = 0; // Compteur pour suivre combien de clients sont connectés
+
+
 void handle_client(int client_socket1, int client_socket2, int pipe_fd);
 
 int main() {
@@ -44,7 +54,7 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    // Mise en écoute du serveur uniquement 2 personnes max
+    // Mise en écoute du serveur uniquement 2 personnes max en attente
     if (listen(server_fd, 2) < 0) {
         perror("Échec du listen");
         close(server_fd);
