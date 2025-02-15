@@ -31,22 +31,18 @@ int main() {
         return -1;
     }
 
-    char move1[10], move2[10], move3[10];
-
-    // Demander les 3 choix au joueur
+  char move1[10], move2[10], move3[10];
     printf("Entrez 3 choix séparés par des espaces (rock, spock, paper, lizard, scissors) : ");
-    while (scanf("%s %s %s", move1, move2, move3) != 3) {
+    while (scanf("%s %s %s", move1, move2, move3) != 3 || get_choice_number(move1) == 0 || get_choice_number(move2) == 0 || get_choice_number(move3) == 0) {
         printf("Entrée invalide, essayez encore : ");
-        while (getchar() != '\n'); // Vider le buffer
+    while (getchar() != '\n'); // Vider le buffer de saisie
     }
 
-    // Mettre les choix dans le buffer à envoyer
     snprintf(buffer, BUFFER_SIZE, "%s %s %s", move1, move2, move3);
     send(sock, buffer, strlen(buffer), 0);
-
-    // Lire la réponse du serveur
     read(sock, buffer, BUFFER_SIZE);
     printf("Résultat : %s\n", buffer);
+
 
     close(sock);
     return 0;
