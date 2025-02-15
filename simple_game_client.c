@@ -31,15 +31,20 @@ int main() {
         return -1;
     }
 
-    int number;
-    printf("Entrez un nombre entre 1 et 5 : ");
-    while (scanf("%d", &number) != 1 || number < 1 || number > 5) {
-        printf("Nombre invalide, essayez encore : ");
-        while (getchar() != '\n');
+    char move1[10], move2[10], move3[10];
+
+    // Demander les 3 choix au joueur
+    printf("Entrez 3 choix séparés par des espaces (rock, spock, paper, lizard, scissors) : ");
+    while (scanf("%s %s %s", move1, move2, move3) != 3) {
+        printf("Entrée invalide, essayez encore : ");
+        while (getchar() != '\n'); // Vider le buffer
     }
 
-    snprintf(buffer, BUFFER_SIZE, "%d", number);
+    // Mettre les choix dans le buffer à envoyer
+    snprintf(buffer, BUFFER_SIZE, "%s %s %s", move1, move2, move3);
     send(sock, buffer, strlen(buffer), 0);
+
+    // Lire la réponse du serveur
     read(sock, buffer, BUFFER_SIZE);
     printf("Résultat : %s\n", buffer);
 
