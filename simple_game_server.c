@@ -112,6 +112,10 @@ void handle_client(int client_socket1, int client_socket2, int pipe_fd) {
              score1, score2, (score1 > score2) ? "Joueur 1 gagne la partie !" :
              (score2 > score1) ? "Joueur 2 gagne la partie !" : "Match nul !");
 
+    // Afficher simplement le PID dans la console
+    pid_t child_pid = getpid();
+    printf("Game : (PID %d)\n", child_pid);
+
     // Envoyer le résultat final aux joueurs
     send(client_socket1, result, strlen(result), 0);
     send(client_socket2, result, strlen(result), 0);
