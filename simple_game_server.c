@@ -21,6 +21,34 @@ typedef struct {
 Client clients[100];  // On suppose qu'il y a au maximum 100 clients
 int client_count = 0; // Compteur pour suivre combien de clients sont connectés
 
+int get_choice_number(const char *choice) {
+    if (strcmp(choice, "rock") == 0) return 1;
+    if (strcmp(choice, "spock") == 0) return 2;
+    if (strcmp(choice, "paper") == 0) return 3;
+    if (strcmp(choice, "lizard") == 0) return 4;
+    if (strcmp(choice, "scissors") == 0) return 5;
+    return 0; // Valeur invalide
+}
+
+int jeu(int number1, int number2) {
+     if ((number1 == 1 && (number2 == 4 || number2 == 5)) ||
+        (number1 == 2 && (number2 == 5 || number2 == 1)) ||
+        (number1 == 3 && (number2 == 1 || number2 == 4)) ||
+        (number1 == 4 && (number2 == 3 || number2 == 2)) ||
+        (number1 == 5 && (number2 == 3 || number2 == 4))) {
+        return 1;
+    } 
+    else if ((number2 == 1 && (number1 == 4 || number1 == 5)) ||
+             (number2 == 2 && (number1 == 5 || number1 == 1)) ||
+             (number2 == 3 && (number1 == 1 || number1 == 4)) ||
+             (number2 == 4 && (number1 == 3 || number1 == 2)) ||
+             (number2 == 5 && (number1 == 3 || number1 == 4))) {
+        return 2;
+    } 
+    else {
+    return 0;
+    }
+}
 
 void handle_client(int client_socket1, int client_socket2, int pipe_fd);
 
@@ -118,21 +146,73 @@ int main() {
 void handle_client(int client_socket1, int client_socket2, int pipe_fd) {
     char buffer1[BUFFER_SIZE], buffer2[BUFFER_SIZE];
 
+    // Lire les choix des deux joueurs (ex : "rock paper spock")
     read(client_socket1, buffer1, BUFFER_SIZE);
     read(client_socket2, buffer2, BUFFER_SIZE);
 
-    int number1 = atoi(buffer1);
-    int number2 = atoi(buffer2);
+    char moves1[3][10], moves2[3][10]; 
+    int numbers1[3], numbers2[3];
 
+    // Extraire les trois choix de chaque joueur
+    sscanf(buffer1, "%s %s %s", moves1[0], moves1[1], moves1[2]);
+    sscanf(buffer2, "%s %s %s", moves2[0], moves2[1], moves2[2]);
+
+    // Convertir les choix en nombres (1 à 5)
+    for (int i = 0; i < 3; i++) {
+        numbers1[i] = get_choice_number(moves1[i]);
+        numbers2[i] = get_choice_number(moves2[i]);
+    }
+
+    // Vérifier si l'un des joueurs a entré une valeur invalide
+    for (int i = 0; i < 3; i++) {
+        if (numbers1[i] == 0 || numbers2[i] == 0) {
+            char error_msg[] = "Entrée invalide. Veuillez entrer rock, spock, paper, lizard ou scissors.\n";
+            send(client_socket1, error_msg, strlen(error_msg), 0);
+            send(client_socket2, error_msg, strlen(error_msg), 0);
+            close(client_socket1);
+            close(client_socket2);
+            return;
+        }
+    }
+
+    // Calcul du score
+    int score1 = 0, score2 = 0;
     char result[BUFFER_SIZE];
-    snprintf(result, BUFFER_SIZE, (number1 > number2) ? "Joueur 1 gagne !\n" :
-                                                       (number2 > number1) ? "Joueur 2 gagne !\n" :
-                                                                            "Égalité !\n");
+    strcpy(result, "Résultat des manches :\n");
 
+    for (int i = 0; i < 3; i++) {
+        int winner = jeu(numbers1[i], numbers2[i]); // Appel de la fonction jeu()
+
+        if (winner == 1) {
+            score1++;
+            snprintf(result + strlen(result), BUFFER_SIZE - strlen(result), 
+                     "Manche %d : Joueur 1 gagne (%s vs %s)\n", i+1, moves1[i], moves2[i]);
+        }
+        else if (winner == 2) {
+            score2++;
+            snprintf(result + strlen(result), BUFFER_SIZE - strlen(result), 
+                     "Manche %d : Joueur 2 gagne (%s vs %s)\n", i+1, moves1[i], moves2[i]);
+        }
+        else {
+            snprintf(result + strlen(result), BUFFER_SIZE - strlen(result), 
+                     "Manche %d : Égalité (%s vs %s)\n", i+1, moves1[i], moves2[i]);
+        }
+    }
+
+    // Score final et gagnant de la partie
+    snprintf(result + strlen(result), BUFFER_SIZE - strlen(result),
+             "\nScore final : Joueur 1 = %d | Joueur 2 = %d\n%s\n",
+             score1, score2, (score1 > score2) ? "Joueur 1 gagne la partie !" :
+             (score2 > score1) ? "Joueur 2 gagne la partie !" : "Match nul !");
+
+    // Envoyer le résultat final aux joueurs
     send(client_socket1, result, strlen(result), 0);
     send(client_socket2, result, strlen(result), 0);
 
+    // Écrire le résultat dans le fichier de log via le pipe
     write(pipe_fd, result, strlen(result));
+
+    // Fermer les sockets
     close(client_socket1);
     close(client_socket2);
 }
