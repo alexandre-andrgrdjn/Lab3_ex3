@@ -1,12 +1,12 @@
 # Variables
 CC = gcc
 CFLAGS = -Wall -Wextra
-SERVER_SRC = simple_game_server.c
-CLIENT_SRC = simple_game_client.c
-SERVER_OBJ = simple_game_server.o
-CLIENT_OBJ = simple_game_client.o
-SERVER_EXEC = simple_game_server
-CLIENT_EXEC = simple_game_client
+SERVER_SRC = rpsls_server.c
+CLIENT_SRC = rpsls_client.c
+SERVER_OBJ = rpsls_server.o
+CLIENT_OBJ = rpsls_client.o
+SERVER_EXEC = rpsls_server
+CLIENT_EXEC = rpsls_client
 
 # Cible par défaut
 all: $(SERVER_EXEC) $(CLIENT_EXEC)
