@@ -5,11 +5,11 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <sys/wait.h>
 #include <fcntl.h>
 
 #define PORT 8080
 #define BUFFER_SIZE 1024
+#define LOG_FILE "rpsls_log.txt"
 
 // Function to convert a move string to a corresponding number
 int get_choice_number(const char *choice) {
@@ -21,7 +21,7 @@ int get_choice_number(const char *choice) {
     return 0; // Invalid choice
 }
 
-// Game function that determines the winner of a round
+// Function that determines the winner of a round
 int jeu(int number1, int number2) {
     if ((number1 == 1 && (number2 == 4 || number2 == 5)) ||
         (number1 == 2 && (number2 == 5 || number2 == 1)) ||
@@ -33,6 +33,17 @@ int jeu(int number1, int number2) {
         return 2; // Player 2 wins
     }
     return 0; // Draw
+}
+
+// Function to write game results to a file
+void log_results(const char *results) {
+    FILE *file = fopen(LOG_FILE, "a");
+    if (file == NULL) {
+        perror("Failed to open log file");
+        return;
+    }
+    fprintf(file, "%s\n", results);
+    fclose(file);
 }
 
 // Function to handle communication between two players
@@ -64,27 +75,32 @@ void handle_client(int client_socket1, int client_socket2) {
     int score1 = 0, score2 = 0;
     char result[BUFFER_SIZE];
 
+    snprintf(result, BUFFER_SIZE, "[Game %d] New Game Started!\n", pid);
+
     // Iterate through three rounds
     for (int i = 0; i < 3; i++) {
         int winner = jeu(numbers1[i], numbers2[i]);
         if (winner == 1) score1++;
         else if (winner == 2) score2++;
-        
+
         // Append round result to the result buffer
         snprintf(result + strlen(result), BUFFER_SIZE - strlen(result),
                  "[Game %d] Round %d: P1(%s) vs P2(%s)  ->  Score: %d - %d\n",
-                pid, i + 1, moves1[i], moves2[i], score1, score2);
+                 pid, i + 1, moves1[i], moves2[i], score1, score2);
     }
-    
+
     // Append the final game result
     snprintf(result + strlen(result), BUFFER_SIZE - strlen(result),
-             "[Game %d] Game Over! Winner: %s\n", pid,
+             "[Game %d] Game Over! Winner: %s\n\n", pid,
              (score1 > score2) ? "Player 1" : (score2 > score1) ? "Player 2" : "Draw");
-    
+
+    // Write to log file
+    log_results(result);
+
     // Send results to both players
     send(client_socket1, result, strlen(result), 0);
     send(client_socket2, result, strlen(result), 0);
-    
+
     close(client_socket1);
     close(client_socket2);
 }
@@ -132,11 +148,11 @@ int main() {
         if (new_socket1 < 0) { perror("Error accepting player 1"); continue; }
 
         printf("Player 1 connected. Waiting for Player 2...\n");
-        
+
         // Accept second player
         new_socket2 = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
         if (new_socket2 < 0) { perror("Error accepting player 2"); close(new_socket1); continue; }
-        
+
         printf("Player 2 connected. Starting the game...\n");
 
         // Create a new process to handle the game
@@ -150,7 +166,7 @@ int main() {
             close(new_socket1);
             close(new_socket2);
         }
-        
+
         // Close sockets in parent process
         close(new_socket1);
         close(new_socket2);
